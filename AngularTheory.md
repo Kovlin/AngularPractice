@@ -106,3 +106,65 @@ puis l'implémenter dans le composant (ex : export class AppComponent implements
 définir la méthode associé à cette interface : ngOnInit() : void {} dans la classe
 
 - gerer interactions utilisateur sur le composant :
+capture de l'interaction se fait coté template car c'est un évenement
+lorsqu'un utilisateur déclenche un évènement est déclenchée côté classe
+
+exemple d'évènement :
+
+	  selectPokemon(pokemonName: string) {
+	  	console.log(`vous avez cliqué sur le pokémon ${pokemonName}`);
+	  }
+
+	la fonction prend en parametre une vaiable string
+	grâce aux backticks `` on peut écrire des variables directement dans les chaines de caracteres comme suit : `${varName}` (JS ES6)
+	on peut éviter les concaténations
+
+
+#### Les Templates
+
+- Ce sont les vues de nos composants, ils contiennent le code de l'interface utilisateur
+- Grâce à la propriété templateUrl de Angular, on peut décrire le template dans un fichier séparé
+on nomme idéalement ce fichier "app.component.html" soit, le même nom que le composant mais avec une extension .html au lieu de .ts
+- Interpolation : permet de dire a Angular d'afficher nos propriétés coté classe du composant dans le template du composant pour ce faire
+on utilise la syntaxe de {{}}
+
+> Comment créer des liaisons entre template et classe du composant dans Angular
+> il existe plusieurs façon de pousser des données de la classe du composant vers le template
+
+Propriétés		Code										Explications
+
+propriété		<img[src]= "someImageUrl">					On utilise les crochets pour lier directement la source
+d'éléments													de l'image à la propriété du composant
+
+
+propriété		<label [attr.for]="someLabelId">			On lie l'attribut for de l'élément label avec la
+d'attribut		</label>									propriété de notre composant SomeLabelId
+
+
+propriété		<div [class.special]="isSpecial">			Fonctionnement similaire, pour attribuer ou non la classe special
+de la classe	Special</div>								à l'élément div
+
+
+propriété		<button
+de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un style pour nos éléments de manière dynamique :
+				Special </button>							ici on définit la couleur de notre bouton en fonction de la propriété
+															isSpecial, soit rouge, soit vert. (c'est un opérateur ternaire que 
+															l'on utilise comme expression).
+
+- comment pousser des évènements depuis le template vers la classe du composant :
+- intercepter les évènements utilisateur levé dans le DOM (représentation structurée de la page html où chaque balise html représente un noeud, le DOM est l'arbre qui représente notre page web)
+- Objectif : lié tout évènements susceptible de survenir dans le DOM à une méthode coté classe du composant en utilisant la syntaxe de liaison d'évènenements de Angular
+
+- Pour faire ce lien : coté template, on utilise le nom de l'évènement, entouré de paranthèse auquel on passe la méthode de la classe de notre composant qu'on veut exécuter.
+
+> exemple :
+	<p (click)="selectPokemon(pokemonList[0])">{{ pokemonList[0].name }}</p>
+
+	ici, lorsque l'on va cliquer sur la balise <p> affichant le nom du pokemon 0 de la liste (on clique le nom afficher), un appel va être fait à la fonction selectPokemon avec comme paramètre pokemonList[0].
+
+- 7. Intercepter tous les évènements du DOM 
+
+	interagir directement avec l'objet event ($event) qui est remonté directement par le DOM et qui est un objet natif
+	cela va permettre d'interagir avec n'importe quel type d'évènement (touche du clavier, souris, etc...) sur n'importe quel noeud du DOM
+
+1:44:00
