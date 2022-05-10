@@ -167,4 +167,6 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 	interagir directement avec l'objet event ($event) qui est remonté directement par le DOM et qui est un objet natif
 	cela va permettre d'interagir avec n'importe quel type d'évènement (touche du clavier, souris, etc...) sur n'importe quel noeud du DOM
 
+	
+	
 1:44:00
