@@ -162,11 +162,198 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 	ici, lorsque l'on va cliquer sur la balise <p> affichant le nom du pokemon 0 de la liste (on clique le nom afficher), un appel va être fait à la fonction selectPokemon avec comme paramètre pokemonList[0].
 
-- 7. Intercepter tous les évènements du DOM 
+- 7. Intercepter tous les évènements du DOM :
 
 	interagir directement avec l'objet event ($event) qui est remonté directement par le DOM et qui est un objet natif
 	cela va permettre d'interagir avec n'importe quel type d'évènement (touche du clavier, souris, etc...) sur n'importe quel noeud du DOM
 
+	en remplaçant cet evenement par :
+	type="number"
+		(click)="selectPokemon($event)"
+
+	on envoit un evenement de type MouseEvent a la fonction.
+	coté template, cet évènement à un type EventTarget, mais pour l'utiliser coté classe du composant, il faut le caster en un élément de type HtmlInputElement comme suit par exemple : 
+	> const index: number = +(event.target as HTMLInputElement).value;
+	comme le .value renvoit une string, pour la caster en nombre on peut simplement utiliser l'opérateur "+" devant
+
+- 8. Les variable référencées dans le template :
+
+	Comme ce n'est pas super pratique de travailler directement avec $event, on utilise une fonctionnalité de Angular qui permet de travailler directement dans le template avec des variables locales, celles-ci nous garantissent un accès direct sur l'élément du DOM depuis le template, ce qui évite plus tard d'etre obligé de caster la balise du DOM sur laquelle à eu lieu l'évènement.
+	grâce à "#" on peut déclarer des variables référencées dans le template.
+
+	exemple :
+	>	<input
+	>		#input
+	>		(keyup)="0"
+	>		type="text"
+	>	/>
+	>	<p>{{ input.value }}</p>
+
+	ici, à chaque fois que l'évènement keyup sera intercepté, le template se mettra à jour avec input.value dans la balise <p></p>
+
+	définition :
+
+	(keyup) is an Angular event binding to respond to any DOM event. It is a synchronous event that is triggered as the user is interacting with the text-based input controls. 	
+	When a user presses and releases a key, the (keyup) event occurs. For using in text-based input controls it is generally used to get values after every keystroke.
+
+- 9. Créer un flux de données bidirectionnel : 
+
+
+	en écrivant : <p>{{ pokemonSelected?.name }}</p>
+	le "?" permet de dire à Angular, si la variable pokemonSelected n'est pas définie (undefined comme type) n'affiche rien plutot qu'une erreur
+
+	pour utiliser .find() sur une liste :
+
+	La méthode find() renvoie la valeur du premier élément trouvé dans le tableau qui respecte la condition donnée par la fonction de test passée en argument. Sinon, la valeur undefined est renvoyée.
+
+	exemple : const pokemon: Pokemon|undefined = this.pokemonList.find(pokemon => pokemon.id == +pokemonId);
+
+	on a donc un (keyUp) dans le template qui appelle la fonction selectPokemon qui met a jour son attribut pokemonSelected qui est utilisé pour afficher le nom de se pokémon dans le template.
+
+- 10. Détecter l'appui sur la touche Entrée :
+
+	Angular permet de filtrer les évènements du clavier à travers une syntaxe spécifique, on peut écouter uniquement la touche entrée à travers un pseudo-évènement, keyup.enter. (keyup) => (keyup.enter)
+
+- 11. Conditionner un affichage avec la directive NgIf :
 	
+	<p *ngIf="pokemonSelected">
+	Vous avez sélectionné le pokémon: {{ pokemonSelected?.name }}
+	</p>
+
+	on écrit *ngIf="condition"
+	ici si le pokemonSelected est undefined ngIf est false, la balise p ne sera pas affichée
+
+	<p *ngIf="!pokemonSelected">
+		Aucun pokémon ne correspond à cet identifiant.
+	</p>
+
+	par exemple si on veut afficher quelque chose lorsque selectedPokemon est undefined
+
+- 12. Afficher une liste avec Ngfor :
+
+	elle permet de boucler sur des tableaux afin d'en afficher tous les éléments.
+
+	<p *ngFor="let pokemon of pokemonList">
+
+	</p>
+
+	let 'type' of 'array'
+	let et of sont obligatoire, et le tableau doit venir de la classe du composant.
+	'let' est similaire a 'var' en javascript mais ne vas permettre à la variable que d'exister dans son scope (dans les {} dans lesquelles elle à été déclarée).
+
+	exemple : 
+
+	function f(input: boolean) {
+		let a = 100;
+		if (input) {
+			// Still okay to reference 'a'
+			let b = a + 1;
+			return b;
+		}
+		// Error: 'b' doesn't exist here
+		return b;
+	}
+
+	const declaration est similaire a let mais une fois assignée, une variable ne peut plus être réassignée
+
+	pokemon est le nom de la variable instanciée par ngFor lorsque le tableau est parcouru, il contiendra nos pokémon du tableau, les uns après les autres.
+
+	ce qui donne:
+
+	<p *ngFor="let pokemon of pokemonList">
+		{{ pokemon.name }}
+	</p>
+
+	ces directives ngIf et ngFor sont disponibles dans tous les templates de l'applications car elles sont ajoutées par le module racine BrowserModule
+
+- 13. Exercice sur les templates :
+
+	Ajouter du CSS via la librairie Materialize :
+	on ajoute : <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+	dans index.html de notre projet
+
+	modifié le template pour modifié l'affichage suivant :
+
+	![From](./Images/ex13From.png)
+
+	en : 
+
+	![To](./Images/ex13To.png)
+
+	Ma solution : 
+
+	```<div class="row">
+		<div *ngFor="let pokemon of pokemonList">
+			<div class="col s4">
+				<div class="card horizontal">
+					<div class="card-image">
+						<img src="{{ pokemon.picture}}">
+					</div>
+					<div class="card-stacked">
+						<div class="card-content">
+							<h5>{{ pokemon.name }}</h5>
+							<p>{{ pokemon.created }}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+- 14. : Correction de l'exercice :
+
+	class="container" : cette classe container permet de centraliser le contenu de la page
 	
-1:44:00
+	class="row" : cette classe row permet de mettre en place le responsive de la page, si l'utilisateur modifie la taille de la page, tous les éléments présents dans la row s'ajuste, on doit donc ensuite définir une taille de colonne pour définir le nombre d'éléments à afficher par ligne (en fonction de la taille de la row et de la col), par défault la taille de row fait 12 unités arbitraire de large
+	
+	class="col m4 s6" : cette classe définit que nous utilisons des colonnes qui sur des écrans de taille médium 'm' font '4' -> 'm4', le s6 ici sert à préciser que si maintenant la fenêtre devient trop petite (s pour small) alors on veut une taille de colonne à 6, ce qui nous fera afficher 2 pokémons par lignes au lieu de 3 avec m4
+
+	class="card horizontal" : cette classe permet de définir une carte horizontale (image à gauche)
+	
+	class="card-image" : cette classe définit une image dans une carte
+
+	class="card-stacked" : cette classe définit le contenu de la carte utilisé avec "card horizontal"
+
+	class="card-content" : cette classe définit le contenu de la carte
+
+	<div class="container">
+		<div class="row">
+			<div *ngFor="let pokemon of pokemonList" class="col m4 s6">
+				<div class="card horizontal">
+					<div class="card-image">
+						<img [src]="pokemon.picture"/>
+					</div>
+					<div class="card-stacked">
+						<div class="card-content">
+							<p>{{ pokemon.name }}<p>
+							<p><small>{{ pokemon.created }}</small></p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+#### Les Directives
+
+- 1. Qu'est-ce qu'une directive ?
+
+	Une directive est une classe Angular ressemblant à un composant mais ne possédant pas de template, la classe Component dans Angular hérite de la classe directive. Ainsi au lieu d'annoter la classe de la directive avec @Component on l'annotera avec @Directive.
+
+	Une directive permet d'interagir avec les éléments HTML d'une page en leur attachant un comportement spécifique, plusieurs directives peuvent être appliquées à un même élément.
+
+	Une directive possède un selecteur css qui indique au Framework où l'activer dans le template. Lorsque Angular trouve une directive dans un template HTML, il instancie la classe de la directive correspondante et donne à cette instance le contrôle sur la portion du DOM qui lui revient.
+
+	3 types de directives :
+
+		1. Les composants : app.component.ts est une directive
+		2. Les directives d'attribut : elles peuvent modifié le comportement des éléments HTML des attributs, des propriétés et des composants. Elles sont représentées habituellements par des attributs au sein des balises HTML d'où leur nom.
+		3. Les directives structurelles : Ces directives sont responsable de la mise en forme d'une certaine manière les éléments HTML d'une page, en ajoutant, retirant, manipulant des éléments et leurs fils. Par exemple : ngIf & ngFor.
+	
+	Ce chapitre ce concentre sur les directives d'attribut.
+
+- 2. Créer une directive d'attribut :
+
+	Ces directives permettent de changer l'apparence ou le comportement d'un élément.
+
+2:28:50 sur la vidéo
