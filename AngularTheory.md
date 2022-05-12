@@ -356,4 +356,210 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 	Ces directives permettent de changer l'apparence ou le comportement d'un élément.
 
-2:28:50 sur la vidéo
+	Mise en place de la directive "BorderCardDirective" qui permettra d'ajouter une couleur sur les pokémons de notre liste lorsque l'utilisateur les survolera avec son curseur. On fixera egalement une hauteur commune a tous les pokemons de notre liste afin qu'ils soient toujours alignés.
+
+	On utilise Angular CLI pour créer cette directive :
+	> ng generate directive border-card
+
+	Angular crée un fichier border-card.directive.ts ET à modifié le fichier app.module.ts afin d'importer cette directive et de la déclarer au niveau du module.
+
+	On veut maintenant récupérer l'élément qui nous vient du DOM dans le constructeur de notre directive afin de pouvoir directement interagir dans la directive avec l'élément (dans notre cas, la carte du pokémon)
+
+	> constructor(private el: ElementRef) {}
+	ElementRef est une référence sur l'élément du DOM sur lequel la directive est appliquée
+	Ensuite on définit 2 méthode :
+		1. setBorder : elle définit la bordure et sa couleur autour d'une carte
+		2. setHeight : qui définit une hauteur commune a tous les éléments
+
+	setHeight : 
+
+	>	setHeight(height: number) {
+		this.el.nativeElement.style.height = `${height}px`;
+		}
+
+		Le elemementRef est un encapsuleur par dessus l'élément natif du DOM, on fait donc appel a l'attribut nativeElement.
+		On peut alors modifié le style directement avec .style.height par exemple
+
+	setBorder :
+
+	>   setBorder(color: string) {
+			this.el.nativeElement.style.border = `solid 4px ${color}`;
+  		}
+		
+		Une bordure solide de 4 pixels de couleur 'color'
+	
+	On les rajoutes ensuite dans le constructeur pour que la directive s'applique directment
+
+- 3. Prendre en compte les actions de l'utilisateur
+
+	Pour changer la bordure lorsque l'utilisateur survole un élément :
+	Il faut pouvoir détecter lorsque le curseur entre ou sort de la carte et ensuite définir une action pour chacun de ces évènements.
+	On va utiliser l'annotation `@HostListener` qui permet de lié une méthode de notre directive à un évènement donné.
+	Nous créeons donc 2 nouvelles méthodes dans la directives qui seront appelées respectivement lorsque le curseur entre sur la carte et lorsqu'il sort de la carte : mouseenter & mouseleave.
+	HostListener doit etre importé
+
+	exemple :
+
+	import { Directive, ElementRef, HostListener } from '@angular/core';
+
+	> dans la classe : 
+
+	@HostListener('mouseenter') onMouseEnter() {
+		this.setBorder('#009688');
+	}
+
+	@HostListener('mouseleave') onMouseLeave() {
+		this.setBorder('#f5f5f5');
+	}
+
+- 4. Utiliser notre directive :
+
+	Utiliser cette directive dans le template de notre composant app.component.html
+
+	on rajoute cette directive dans la balise correspondante a la carte d'un pokemon : 
+
+	> <div class="card horizontal" (click)="selectPokemon(pokemon.id)" pkmnBorderCard>
+
+- 5. Ajouter un paramètre à notre directive : 
+
+	Pour le moment notre directive pkmnBorderCard n'est pas personalisable, elle impose une couleur unique aux bordures.
+	Comment personaliser la couleur ?
+
+	On veut préciser une propriété d'entré à notre directive grâce à la notiation `@Input`
+	On doit donc l'importer depuis @angular/core
+	ensuite sous le constructeur on déclare cette nouvelle propriété.
+
+
+	> 	@Input('pkmnBorderCard') borderColor: string; //alias
+
+	> 	@HostListener('mouseenter') onMouseEnter() {
+			this.setBorder(this.borderColor || '#009688');
+		}
+
+	On définit cette propriété comme étant une string et on l'utilise dans la fonction onMouseEnter()
+	le `||` (ou) permet de définir une couleur par défaut si aucune n'est précisée dans le template
+	cette propriété s'utilise comme suit : 
+	
+	> <div class="card horizontal" (click)="selectPokemon(pokemon.id)" pkmnBorderCard="red">
+
+	La couleur de la bordure sera donc rouge ou '#009688' si la propriété n'est pas précisée
+
+	- 5.1. Les Alias :
+
+		Il y a deux maniere de déclarer une propriété d'entré, avec ou sans Alias
+
+		avec Alias :  	@Input('pkmnBorderCard') borderColor: string;
+		sans Alias :	@Input() pkmnBorderCard: string
+
+		sans alias nous sommes obligé d'utiliser le nom de la directive pour nommer notre propriété
+
+
+- 6. Ameliorer notre directive d'attribut :
+
+	remplacer les valeurs codé en 'dur' par des propriétés.
+	initialColor : propriété initiale afficher au chargement de la page
+	defaultColor : propriété couleur par défaut si aucune couleur de bordure n'est précisée dans le template
+	defaultHeight : la hauteur par défaut du cadre pour nos bordures
+
+
+	Résultat : 
+
+	export class BorderCardDirective {
+
+		private initialColor: string = '#f5f5f5';
+		private defaultColor: string = '#009688';
+		private defaultHeight: number = 180;
+
+		constructor(private el: ElementRef) {
+			this.setBorder(this.initialColor)
+			this.setHeight(this.defaultHeight);
+		}
+
+		@Input('pkmnBorderCard') borderColor: string; //alias
+
+		@HostListener('mouseenter') onMouseEnter() {
+			this.setBorder(this.borderColor || this.defaultColor);
+		}
+
+		@HostListener('mouseleave') onMouseLeave() {
+			this.setBorder('#f5f5f5');
+		}
+
+		setHeight(height: number) {
+			this.el.nativeElement.style.height = `${this.defaultHeight}px`;
+		}
+
+		setBorder(color: string) {
+			this.el.nativeElement.style.border = `solid 4px ${color}`;
+		}
+	}
+
+#### Les Pipes
+
+- 1. Qu'est-ce qu'un pipe ?
+
+	Les pipes permettent d'effectuer des transformations de donnée interpolée, les dates en format brute par exemple
+
+- 2. Utiliser un pipe :
+
+	Afficher des dates formatées, on va modifié les dates affiché actuellement grâce au pipe 'date'
+	On va modifié le template pour ajouter le pipe 'date' a pokemon.created
+	> {{ pokemon.create | date }}
+
+- 3. Les pipes disponibles par défaut :
+
+	https://angular.io/guide/pipes
+
+- 4. Combiner les pipes :
+
+	> {{ pokemon.created | date | uppercase}}
+
+	les pipes sont appliqués de la gauche vers la droite
+
+- 5. Paramétrer un pipe :
+
+	on peut choisir le format par exemple pour date, ce qui nous permet de mieux définir l'affichage souhaité
+	> {{ pokemon.created | date:"dd/MM/yyyy" }}
+	afficher la date au format : jour/mois/année
+
+	on peut trouver ces parametres dans la documentations des pipes de angular
+
+- 6. Créer un pipe personnalisé : 
+
+	On va créer un pipe PokemonTypesColorPipe
+	un pipe qui renverra une couleur correspondant a la couleur du type du pokemon (eau : bleu, feu : rouge par exemple)
+
+	on le genere avec Angular CLI :
+
+	> ng generate pipe pokemon-type-color
+
+	le fichier contenant le pipe est crée : pokemon-type-color.ts
+	et app.module.ts est mis a jour pour contenir le pipe
+
+	on modifie la fonction transform pour qu'elle prenne en parametre ce que l'on veut comme type et qu'elle retourne aussi le type voulu
+	ensuite on ajoute du code avec un switch case pour changer la couleur en fonction du type du pokemon en entrée et on retourne 
+	'chip ' + color
+	chip étant une classe de materialize permettant de faire une bulle d'une couleur autour d'un texte
+
+	dans le template on ajoute : 
+
+	<span *ngFor="let type of pokemon.types" class="{{ type | pokemonTypeColor }}">
+		{{type}}
+	</span>
+
+	car un pokémon n'a pas qu'un type on utilise la directive ngFor.
+
+	<span>
+	L'élément HTML <span> est un conteneur générique en ligne (inline) pour les contenus phrasés. Il ne représente rien de particulier. Il peut être utilisé pour grouper des éléments afin de les mettre en forme (grâce aux attributs class ou id et aux règles CSS) ou parce qu'ils partagent certaines valeurs d'attribut comme lang. Il doit uniquement être utilisé lorsqu'aucun autre élément sémantique n'est approprié. <span> est très proche de l'élément <div>, mais l'élément <div> est un élément de bloc, alors que <span> est un élément en ligne.
+
+- 7. Conclusion :
+
+	Les pipes sont utilisé pour formatter des donées jugées trop brutes au sein de nos templates. Plutot que de définir les meme transformations a travers plusieurs de nos composants on peut développer des pipes personnalisé afin de centraliser la définition de ces transformations.
+
+
+#### Les Routes
+
+- 1. Introduction :
+
+sur la vidéo : 3:01:14
+
