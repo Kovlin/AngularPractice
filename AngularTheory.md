@@ -14,6 +14,8 @@ installer nodejs LTS (last stable version) qui installer aussi npm (gestionnaire
 
 installer Angular CLI : npm install -g @angular/cli
 
+export ng=/Users/rlinkov/Documents/AngularPrac/node_modules/@angular/cli/bin/ng.js -> Mac19 utiliser Angular CLI localement
+
 ng new ng-pokemon-app --minimal --style=css 
 
 -> cette commande va générer un nouveau (socle du) projet (new), appelée ng-pokemon-app, --minimal pour générer une version allégée du socle
@@ -561,5 +563,332 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 - 1. Introduction :
 
-sur la vidéo : 3:01:14
+	Sert à mettre en place plusieurs pages sur l'application
+	La navigation se fait comme sur un site Web
+
+- 2. Le fonctionnement de la navigation avec Angular : 
+
+	Les routes dans une application doivent être regroupées par fonctionnalité au sein de modules (les routes concernant les pokémons doivent être centralisées dans le même modules tout comme celles concernants d'autres aspects de l'application dans d'autre modules)
+
+	Pour mettre en place un systeme de route dans l'application, il nous faut au moins 2 composants (ici le meme que celui de base, celui qui représente des pokémons '/pokemon' ainsi qu'une nouvelle page lorsqu'on clique sur un pokemon avec des infos détaillées)
+
+	2 nouveaux composants :
+		1. Liste pokémons (comme le module de base)
+		2. Details des pokemon (detail-pokemon.component) qui affiche une page d'information spécifique
+
+- 3. Générer deux nouveaux composants :
+
+	On les crées dans le dossier src/app du projet via Angular CLI
+
+	> ng generate component list-pokemon --inline-template=false
+
+		on rajoute --inline-template=false car on a générer un projet avec la config --minimal et donc Angular ne génere qu'un seul fichier pour le composant, on rajoute cette option pour aussi générer le template apart et pouvoir travailler directement sans devoir le créer manuellement
+
+		nos deux fichiers sont donc crée et le fichier app.module.ts (module racine) est mis a jour pour déclarer ce nouveau composant, les fichiers sont créer dans un dossier correspondant au nouveau composant
+	
+	> ng generate component detail-pokemon --inline-template=false
+
+- 4. Créer des routes :
+
+	Les composants sont crée mais pas encore lié au systeme de navigation, on déclare donc les nouvelles routes dans le fichier app-routing.module.ts
+
+	pour déclarer une route on ajoute un objet à la constante routes pour lequel on déclare la propriété path et le chemin associé ainsi qu'un component et le composant associé :
+
+	pour déclarer des chemins "dynamique", ajouté une propriété au chemin, on utilise ':' devant cette propriété
+
+	On peut déclarer une route par défaut en utilisant path: '' et un redirectTo: '/pokemons' vers le composant par défaut
+
+	const routes: Routes = [];
+
+	devient :
+
+	const routes: Routes = [
+	{ path: 'pokemons', component: ListPokemonComponent},
+	{ path: 'pokemons/:id', component: DetailPokemonComponent},
+	{ path: '', redirectTo: 'pokemons', pathMatch: 'full'}
+	];
+
+	les routes sont lues du haut vers le bas, il faut donc déclarer les routes plus spécifiques en premier et les plus générales en dernier pour que les routes soient appelées correctement
+
+- 5. La balise <router-outlet> :
+
+	Pour l'instant le fonctionnement de notre application n'a pas été modifié du point de vue utilisateur
+	coté template, dans notre composant racine il nous faut ajouter l'élément router-outlet qui va permettre de relié les routes définies avec notre template.
+
+	A chaque fois que l'url de la page change, Angular va venir injecter le contenu du template du composant associé à la route à l'intérieur de la balise : <router-outlet>template injecté</router-outlet>
+
+	On peut donc dire que app.component.html va contenir les composants fils qui seront ajouté dans router-outlet
+
+- 6. Modifier le composant de la liste des pokémons :
+
+	On met le code du template du composant racine dans le composant liste de pokémons
+	Dans le code du composant, il suffit juste d'ajouter : pokemonList: Pokemon[] = POKEMONS;
+	car le template ne dépend de rien d'autre que de pokemonList
+	On peut "nettoyer" app.component.ts car il ne sert plus maintenant qu'a afficher le titre et le router-outlet de notre application
+
+- 7. Dynamiser le composant détail d'un pokémon :
+
+	Ce composant match sur la route /pokemons/:id, il faut donc bien construire sa route pour se retrouver au bon endroit
+
+	Il faut donc récuperer l'id qui provient du router et ensuite chercher dans la liste de pokémon le pokémon correspondant à cet identifiant dans l'url
+
+	Pour ce faire, on utilise un service qui est ActivatedRoute de Angular, il faut donc l'importer et le rendre disponible via le constructeur
+	> import { ActivatedRoute } from '@angular/router';
+	> constructor(private activatedRoute: ActivatedRoute) { }
+
+	ce ActivatedRoute va permettre d'acceder a l'id dans l'url (dans la route courante)
+	dans ngOnInit :
+		> const pokemonId: string|null = this.activatedRoute.snapshot.paramMap.get('id');
+
+		snapshot permet de récupérer les données à l'instant t des paramètres transmis sous la forme d'une ParamMap (sorte de tableau contenant les parametres de l'url). On get('id') qui correspond au :id de la route
+
+		export class DetailPokemonComponent implements OnInit {
+
+			pokemonList: Pokemon[];
+			pokemon: Pokemon|undefined;
+
+			constructor(private activatedRoute: ActivatedRoute) { }
+
+			ngOnInit(): void {
+				this.pokemonList = POKEMONS;
+				const pokemonId: string|null = this.activatedRoute.snapshot.paramMap.get('id');
+				if (pokemonId)
+					this.pokemon = this.pokemonList.find(pokemon => pokemon.id == +pokemonId)
+			}
+		}
+
+- 8. Brancher le template détail d'un pokémon :
+
+	Grâce à la directive ngIf, on construit le template uniquement si un pokémon doit être affiché
+
+- 9. Ajouter une barre de navigation :
+
+	nous permettra de ne pas avoir le titre Liste de Pokémons partout, on remplace le <h1> (titre) par une barre de navigation <nav> :
+
+	<nav>
+		<div class="nav-wrapper teal">
+			<a href="#" class="brand-logo center">
+				Pokédex
+			</a>
+		</div>
+	</nav>
+
+- 10. Naviguer grâce au service Router :
+
+	On veut pouvoir cliquer sur une carte et arriver sur la bonne page ainsi que pouvoir utiliser le bouton retour pour revenir a la liste
+
+	Dans details-pokemon on ajoute le service router (en import et dans le constructeur)
+
+	> constructor(private activatedRoute: ActivatedRoute, private router: Router) { }
+
+	On va faire appel à ce router et sa propriété navigate pour rediriger l'utilisateur :
+
+	> 	goToPokemonList(): void {
+			this.router.navigate(['pokemons'])
+		}
+	dans liste-pokemon :
+	
+	> 	goToPokemon(pokemon: Pokemon): void {
+			this.router.navigate(['pokemons', pokemon.id])
+		}
+	et on l'ajoute dans le template dana un evenement click dans le bloc div de la carte
+
+	> <div class="card horizontal" pkmnBorderCard (click)="goToPokemon(pokemon)">
+
+- 11. Gérer les erreurs 404 :
+
+	On crée un composant chargé de gérer ce type d'erreurs
+
+	> ng generate component page-not-found
+
+	dans app-routing on va déclarer une route et utiliser l'opérateur ** pour intercepter toutes les routes de l'application
+
+	> { path: '**', component: PageNotFoundComponent}
+
+	On le met en dernier car il intercepte toutes les routes restantes après celles déclarées plus haut (car les routes sont lues du haut vers le bas et dès qu'une route est interceptée, le composant est affiché)
+
+	> <a routerLink="pokemons" class="waves-effect waves-teal btn-flat">
+	la directive routerLink de Angular permet aussi de faire des redirections (équivalent a (clic)="goToAccueil" par exemple)
+
+
+#### Les Modules
+
+- 1. Qu'est-ce qu'un module ?
+
+	Ils servent à mieux organiser l'application et son code.
+	On va ajouter un nouveau module consacré uniquement à la gestion des pokémons dans l'application
+	Ca ne se voit pas du coté utilisateur mais c'est important afin d'avoir une bonne architecture d'application et la maintenir plus simplement
+
+- 2. Les modules Angular et Javascript :
+
+	les applications Angular sont modulaires et possèdent leur propre système de module
+
+                                   -----> Feature module A
+	Application -----> root module -----> Feature module B
+	                               -----> Feature module C
+
+	Chaque application possède au moins un module, le module racine, nommé app.module par convention
+	Il peut suffire pour de petites applications mais la plupart des projets en ont besoin de plusieurs.
+	On parle alors de modules de fonctionnalités car pour chaque fonctionnalités dans le projet on ajoute un nouveau module,
+	les modules de fonctionnalités sont donc un ensemble de classes et d'éléments dédiés à un domaine spécifique de l'application.
+
+	Quel que soit la nature du module, un module est toujours une classe avec le décorateur @NgModule({})
+
+	Dans ce module on retrouve 5 propriétés qui décrivent le module :
+
+		1. declarations : sont les classes de vues qui appartiennent à ce module, Angular à 3 types de classes de vues, les composants, les directives et les pipes. Il faut renseigner toutes ces classes de vues dans le tableau
+
+		2. exports : sous-ensemble de classes de vues à exporter. Sous-ensembles des déclarations qui doivent être visibles et utilisables dans les templates de composants d'autres modules
+
+		3. imports : classes nécéssaires au fonctionnement du module. Concerne toutes les classes exportées depuis d'autres modules dont on a besoin dans ce module.
+
+		4. providers : permet de fournir un service au module. Cette propriété concerne les services et l'injection de dépendance
+
+		5. Bootstrap : le composant racine pour le module racine. Cette propriété ne concerne que le module racine, il faut y renseigner le composant racine (par convention app.component), le composant affiché au lancement de l'application.
+
+	Javascript à son propre système de module qui est complètement différent et n'a rien à voir avec celui de Angular. Dans Javascript chaque fichier est un module et tous les objets définis dans ce fichier appartiennent au module. Le module javascript déclare certains objets comme publiques en les déclarants avec le mot-clé export ensuite d'autre module javascript utilisent le mot-clé import pour accéder à ces objets. C'est ce qu'on utilise pour exporter et importer aussi dans Angular. Les systemes de modules de Javascript sont différents mais complémentaires et on utilise les deux pour écrire une application Angular. Angular utilise les modules Javascript et a ses propres modules aussi (les deux appelations ne désigne pas la même chose).
+
+
+- 3. Créer un module :
+
+	Module permettant de centraliser la gestion des pokémons dans notre application.
+
+	Création d'un nouveau module avec Angular CLI :
+
+	> ng generate module pokemon
+
+	crée un dossier src/app/pokemon contenant le fichier pokemon.module.ts
+
+	On va maintenant déplacer ce qu'on a déjà créer dans le dossier pokémon et connecté ces éléments au module :
+		- list-pokemon/
+		- detail-pokemon/
+		- pokemon-type-color.pipe.ts
+		- border-card.directive.ts
+		- pokemon.ts
+		- mock-pokemon.ts
+
+	par défaut, dans pokemon.module.ts, Angular à importer le CommonModule, il s'agit d'une base dont on a besoin dans n'importe quel module et qui contient par exemple les directives structurelles ngIf et ngFor.
+
+	Il faut ajouter nos deux composants, notre directive et notre pipe dans les déclarations, on les déclares ici plutot que dans le module racin car on en a besoin que au niveau de la fonctionnalité pokemon.
+
+	On vient ensuite déclarer les routes propres à la fonctionnalité pokemon dans le module plutot que de passer par les routes racines
+
+	>	import { RouterModule, Routes } from '@angular/router';
+
+	>	const pokemonRoutes: Routes = [
+			{ path: 'pokemons', component: ListPokemonComponent},
+			{ path: 'pokemons/:id', component: DetailPokemonComponent},
+		];
+	
+	on ajoute dans les imports :
+
+	>	imports: [
+			CommonModule,
+			RouterModule.forChild(pokemonRoutes),
+		]
+
+	méthode forChild ici alors que dans les routes racines la méthode forRoot est utilisée
+
+	On peut enlever les déclarations concernant les pokémons dans le module racine et importer le module pokemon
+
+	Il faut placer le module PokemonModule avant le module app-routing.module car sinon Angular intercepte les routes de app-routing.module en premier comme la 404 par exemple ce qui affichera un 404 en permanence.
+
+- 4. Structurer l'architecture de l'application :
+
+	La réorganisation du code à nécéssité plusieurs opérations :
+		- changer le contenu de certains fichiers
+		- créer de nouveaux fichiers
+
+	c'est donc plus intéressant de penser l'architecture de l'application à l'avance
+
+	Comment sera structuré l'application finale ?
+
+	Module racine : AppModule
+	Module de gestion des pokémons : PokemonModule
+
+	On va rajouter une fonctionnalité de login pour l'utilisateur. un composant login.component dans le module racin de l'application.
+	Elle se trouvera au niveau racine car elle n'a rien a voir avec la gestion des pokémons
+
+#### Les Services
+
+- 1. Introduction :
+
+	Enrichir l'application avec des services, nos composants ListePokemon et DetailPokemon vont avoir besoins d'acceder aux pokemons et effectuer des opérations dessus. Nous allons donc centralisé ces données et ces opérations dans un service.
+	Ce service sera utilisables pour tous les composants du module pokemon afin de leur fournir un accès et des méthodes prêt à l'emploi pour gérer des pokémons
+
+- 2. Créer un service :
+
+	Ce service s'occupera de fournir des données et des méthodes à tous les composants du module pokémon.
+	L'objectif et de masqué à nos composants la façon dont nous récupérons les données et le fonctionnement de certaines méthodes ainsi que de factoriser des comportements commun entre plusieurs composants.
+
+	> ng generate service pokemon/pokemon
+	> ng generate service pokemon/pokemon --dry-run
+
+	--dry-run permet de simuler une commande pour savoir ce qu'Angular CLI aurait créé
+	ici on crée le service pokemon dans le dossier pokemon/ de l'application
+
+	pokemon.service.ts est créé dans pokemon/
+
+	ici on aura pas un décorateur @Service comme c'était le cas pour les composants, pipes, modules et directives mais un décorateur @Injectable
+
+	Ce décorateur permet d'indiquer à Angular que ce service pokemon.service peut lui-même avoir d'autres dépendances, aucune dépendance supplémentaires ici mais ce décorateur est nécéssaire pour brancher notre service avec le mécanisme d'injection de dépendance d'Angular. On va donc pouvoir utiliser ce service ailleurs dans l'application et d'importer des services dans ce service (via le constructeur)
+
+	@Injectable à une propriété [providedIn: 'root'] qui permet d'indiquer à Angular qu'on veut utiliser la même instance du service dans toute notre application. On ne va donc jamais devoir créer nous même une instance de pokemon.service (new pokemon.service()). On utilise donc le mécanisme d'injection d'Angular pour utiliser ce service.
+
+	On va créer 3 méthodes :
+		- getPokemonList()
+		- getPokemonById()
+		- getPokemonTypeList()
+
+- 3. Consommer un service :
+
+	Injecter ce service dans liste et detail, pour ce faire on l'ajoute aux parametres du constructeur
+	
+	> 	constructor(private router: Router,
+		private pokemonService: PokemonService ) {}
+
+	et on l'utilise dans les composants, exemple :
+
+	> this.pokemon = this.pokemonService.getPokemonById(+pokemonId);
+
+- 4. Fonctionnement de l'injecteur de dépendances :
+
+	Angular possède son propre framework d'injection, on ne peut pas vraiment développer d'application sans ce outil.
+	L'injection de dépendances est un model de développement ou 'design pattern' en anglais dans lequel chaque classe reçoit ses dépendances d'une source externe plutôt qu'en les créants elle-même.
+
+	Imaginons que le framework d'injection d'Angular possède quelque chose appelé un injecteur.
+	Dans ce cas on utilise l'injecteur pour gérer les dépendances de nos classes sans s'occuper des les gérer nous mêmes.
+	Si on se rend dans le fichier main.ts Angular crée un injecteur à l'échelle de l'application durant le procéssus de démarrage.
+	Nous n'avons donc pas à nous en occuper par contre il faut enregistrer des fournisseurs afin de rendre le service disponible là où nous en avons besoin, au niveau d'un module, d'un composant ou de toute l'application.
+	cette ligne :  platformBrowserDynamic().bootstrapModule(AppModule)
+
+- 5. Fournir un service au niveau de l'application :
+	propriété de @Injectable :
+		providedIn: 'root'
+	
+	Ce qui fournit le service à l'ensemble de l'application grâce à l'injecteur racine 'root', immédiatement le PokemonService est disponible partout.
+
+- 6. Fournir un service au niveau d'un module :
+
+	Idéallement PokemonService ne devrait être disponible que pour le module Pokemon.
+	Dans le cas où l'on veut que notre service ne soit disponible qu'au niveau d'un module, il faut modifié l'injecteur.
+
+	On supprime l'option providedIn: 'root'
+	et on ajoute la propriété providers: [] au module qui utilisera le service :
+
+	>   providers: [
+	  		PokemonService
+  		],
+
+- 7. Fournir un service au niveau d'un composant :
+
+	Cela à peut d'intérêt car chaque composant aura une instance différente du service
+
+	on rajoute : providers[PokemonService] dans @Component
+
+#### Les Formulaires
+
+- 1. Introduction :
+
+	vidéo : 4:41:50
 
