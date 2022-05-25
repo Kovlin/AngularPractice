@@ -890,5 +890,73 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 - 1. Introduction :
 
-	vidéo : 4:41:50
+	Les formulaires sont omniprésents dans les applications, il y a un formulaire pour la connection utilisateur, un formulaire de contact, pour modifier des données, pour mettre à jour son profil.
 
+	La gestion de ceux-ci est pourtant complexe, entre la gestion des données utilisateurs, la validation des données, l'affichage de messages d'erreur ou de succès il faut souvent beaucoup de travail afin de fournir un expérience complète et agréable à l'utilisateur. Heureusement Angular peut nous aider à créer des formulaires et nous faciliter le travail.
+
+- 2. Un formulaire d'édition :
+
+	Un bouton éditer sur le composant detail-pokemon qui permet de modifier :
+		- Nom du pokémon
+		- Points de vie
+		- Dégâts
+		- type(s)
+
+		bouton pour valider les changements
+
+- 3. Présentation des formulaires pilotés par le template :
+
+	Pour créer un formulaire avec Angular, 2 modules sont mis à disposition :
+
+		- FormsModule
+		- ReactiveFormsModule
+
+	Les deux modules répondent au même besoin, mais ont une approche différente
+
+	FormsModule : Développe une partie importante du formulaire dans le template -> Template Driven Form
+	ReactiveFormsModule : Centre le développement du formulaire côté composant
+
+	FormsModule est plus adapté aux débutants et aux formulaires de petite taille
+
+	ils proviennent de la librairie : @angular/forms
+	deux nouvelles directives importantes : ngForm & ngModel
+	ces deux directives proviennent de FormsModule et vont nous aider à développer des formulaires
+
+- 4. La directive NgForm :
+
+	npm Package 	: @angular/forms
+	Module			: import { NgForm } from '@angular/forms';
+	Source			: forms/directives/ng_form.ts
+
+	la directive ngForm est active dans toutes les balises <form></form> dans le module où le formsModule est importé
+	Pour chaque formulaire où elle est appliquée, la directive ngForm va créer une instance d'un objet FormGroup au niveau global du formulaire
+
+	Une référence à cette directive nous permet de savoir si le formulaire que remplit l'utilisateur est valide ou non, au fur et à mesure que l'utilisateur le complète.
+	On peut aussi être notifié lorsque l'utilisateur déclenchera la soumission du formulaire
+
+- 5. La directive NgModel :
+
+	npm Package 	: @angular/forms
+	Module			: import { NgForm } from '@angular/forms';
+	Source			: forms/directives/ng_model.ts
+
+	Cette directive doit s'appliquer sur chacun des champs du formulaire et ce pour plusieurs raison :
+
+		- Elle crée une instance d'un objet FormControl pour chaque champ du formulaire
+		- Chaque instance de FormControl constitue une brique élémentaire qui encapsule l'état donné d'un champ et à pour rôle de traquer la valeur du champ, les interactions avec l'utilisateur, la validité des données saisies et de garder la vue synchroniser avec les données
+		- Chaque FormControl doit être définit avec un nom, il suffit d'ajouter l'attribut name a la balise HTML associée :
+				FormControl.color
+					<=>
+				<input name="color"></input>
+		- Lorsque cette directive est utilisée au sein d'une balise <form></form>, elle s'occupe pour nous de l'enregistrer au près du formulaire comme un élément fils de ce formulaire. En combinant cette directive avec la directive ngForm on peut donc savoir en temps réel si le formulaire est valide ou non
+		- On peut aussi utiliser la directive ngModelGroup pour créer des sous-groupes de champs à l'intérieur du formulaire.
+
+		En plus la directive ngModel s'occupe de mettre en place une liaison de donées bi-directionnelle pour chacun des champs du formulaire. Cette liaison de données bi-directionnelles est très utile pour gérer les interactions utilisateur côté template et traité les données saisies côté composant
+
+		Elle s'occupe aussi de rajouter et de retirer des classes spécifiques sur chaque champ ce qui nous permet de savoir si un utilisateur à cliquer ou non sur un champ, si la valeur du champ à changé ou si il est devenu invalide. En fonction de ces informations nous pouvons changer l'apparence d'un champ et faire apparaître un message d'erreur ou de confirmation à l'utilisateur
+		
+- 6. Mettre en place le module FormsModule
+
+	Ces directives viennent du module FormsModule, il fautt donc injecter ce module pour rendre ces directives disponibles dans nos composants.
+
+	4:47 video
