@@ -1405,7 +1405,7 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 - 1. Introduction :
 
-	Comment communiquer avec un serveur distant afin de récupérer les pokémons, les éditer, les supprimer et sauvegarder ces changements sur le serveur. Ajouter un champ de recherche afin de retrouver plus facilement les pokémons.
+	Comment communiquer avec un serveur distant afin de récupérer les pokémons, les éditer, les supprimer et sauvegarder ces changements sur le serveur. Ajouter un champ de recherche avec auto-complétion afin de retrouver plus facilement les pokémons.
 
 	API = Interface de Programmation
 
