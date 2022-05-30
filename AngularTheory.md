@@ -1189,4 +1189,228 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 - 1. Introduction :
 	
-	5:51:38
+	Comment communiquer avec un serveur distant ?
+	Il y a plusieurs manières de faire, on peut faire des appels sur le réseau avec des promesses, avec des observable et la programmation réactive
+
+- 2. Le fonctionnement des promesses :
+
+	Les promesses sont natives en Javascript depuis ES6
+	Les promesses sont là pour essayer de simplifier la programmation asynchrone
+	La programmation asynchrone désigne un mode de fonctionnement dans lequel les opérations sont non-bloquantes
+	Cela signifie que l'utilisateur peut continuer à utiliser l'application web en naviguant et en remplissant des formulaires sans que le site soit bloqué dès qu'il y a un appel au serveur.
+
+	La gestion est asynchrone, plusieurs requêtes ont lieu simultanément, et sont non-bloquantes.
+				--------->
+	Application -------------->		serveur
+				<-------------------
+				------------>
+
+	On peut aussi utiliser des fonctions de callback pour gerer les appels asynchrone mais les promesses sont plus pratiques
+
+	Lorsqu'on crée une promesse avec la classe 'Promise' on lui associe implicitement une méthode then qui prend 2 arguments, une callback de succès d'abord et ensuite une callback d'erreur ainsi lorsque la promesse est réussie on appelle la callback de succès et si elle échoue on invoque la callback d'erreur
+
+
+	/****************************************************************************
+	*	Exemple n°1																*
+	*	Cet exemple permet de récupérer un utlisateur depuis un seveur distant	*
+	*	à partir de son identifiant												*
+	****************************************************************************/
+
+	let recupererUtilisateur = function(idUtilisateur) {
+		return new Promise(function(resolve, reject) {
+			// Appel asynchrone au serveur pour récupérer les informations d'un utilisateur.
+			// A partir de la réponse du serveur, on extrait les donées de l'utilisateur.
+			let utilisateur = reponse.data.utilisateur;
+
+			if (reponse.status === 200) {
+				resolve(utilisateur);
+			} else {
+				reject('Cet utilisateur n\existe pas !');
+			}
+		})
+	};
+
+	Cette fonction présente une promesse qui récupère un utilisateur depuis un serveur distant à partir de son identifiant
+	La fonction recupererUtilisateur prend en paramètre un identifiant et renvoi une promesse qui contient l'objet utilisateur correspondant,
+	en revanche en cas d'erreur lors de l'appel la promesse renverra un message d'erreur.
+	On a créé une fonction qui renvoie une promesse avec les informations du serveur
+
+
+	/****************************************************************************
+	*	Exemple n°2																*
+	*	Cet exemple est une fonction qui renvoit une promesse.					*
+	*	contenant les informations de l'utilisateur.							*
+	****************************************************************************/
+
+	recuprerUtilisateur(idUtilisateur)
+		.then(function(utilisateur) { // success
+			console.log(utilisateur);
+			this.user = utilisateur;
+		}, function(error) { // error
+			console.log(error);
+		});
+
+	Nous utilisons les méthode then dans notre projet pour pouvoir profiter de la réponse de notre promesse.
+	On appelle la fonction recupererUtilisateur avec un certain identifiant, ensuite grâce à la méthode 'then'
+	on peut récupérer dans une fonction anonyme la valeur de retour de la promesse, ici il s'agit d'un objet utilisateur.
+	Ce code est fonctionnel mais peu lisible mais ES6 permet d'améliorer cette visibilité avec les arrow functions
+
+
+	/****************************************************************************
+	*	Exemple n°3																*
+	*	Même exemple que le n°2,												*
+	*	mais avec l'utilisation des 'Arrow functions.							*
+	****************************************************************************/
+
+	recupererUtilisateur(idUtilisateur)
+		.then(utilisateur => {	// success
+			console.log(utilisateur);
+			this.user = utilisateur;
+		}, error => console.log(error);
+	);
+
+	Les promesses peuvent couvrir beaucoup de cas de la programmation asynchrone, la gestions des évènements, etc...
+	Mais elles ont aussi leur limites pour la gestion d'un grand nombre de requêtes dans un délai très court.
+	Pour gérer plusieurs évènements pouvant arriver en parralèlle sans saturer notre code de prommesses, on utilisera la programmation réactive
+
+- 3. Qu'est-ce que la programmation réactive :
+
+
+	La programmation réactive est une nouvelle manière d'appréhender la programmation asynchrone.
+
+	L'idée est de considérer les interactions qui se déroulent dans l'application comme des évènements sur lesquels on peut effectuer des opérations (regroupement, filtrage, combinaison, etc ...).
+
+	Ainsi les évènements comme les clics de souris deviennent des flux d'évènements asynchrone auquels on peut s'abonner pour ensuite pouvoir y réagir. Il est possible de créer des flux à partir de tout et n'importe quoi, pas uniquement des clics souris.
+
+	Exemple :
+	Il est très fréquent de voir réagir à des évènements, côté navigateur en ajoutant des déclencheur selon les interactions de l'utilisateur et côté serveur en traitant des requêtes à la base de données ou à des services tiers.
+	
+	Dans la programmation réactives toutes ces séquences d'évènements sont appelées des flux.
+
+	/!\ ----- Programmation réactive = Programmation avec des flux de données asynchrones ----- /!\
+
+	De manière générale tous ces évènements sont poussés par un créateur de donées vers un consomateur
+
+	Le rôle du développeur est de définir des 'écouteurs' d'évènements (des consomateurs) sous forme de fonctions pour réagir aux différents flux (qui sont eux les producteurs de données).
+
+	Les écouteurs d'évènements sont nommés des 'Observeurs' et le flux lui-même est le sujet observé, on parle d''Observable'
+	Lorsqu'on s'abonne à un flux pour capter ses évènements on dit que l'on s'abonne ou s'inscrit à ce flux
+
+	Fonctions écoutants les flux : Observeur
+	Les flux écouté : Observable
+
+	https://rxmarbles.com/
+
+	Ce site illustre tous les traitements possibles sur les flux
+
+- 4. Qu'est-ce qu'un flux :
+
+	Un flux est une séquence d'évènements en cours ordonnés dans le temps.
+
+	Si on observe un utilisateur qui clique plusieurs fois sur un bouton pour une raison quelquonque, cette suite de cliques peut être modelisée comme un flux d'évènements, on peut appliquer des opérations sur ce flux d'évènements.
+
+	On peut détecter les doubles cliques de l'utilisateur et ignorer les cliques simple, pour cela on peut décider qu'un double clique est une succéssion de cliques simples ayants moins de 250ms d'interval.
+
+	Comment transformer un flux :
+
+	On y applique des transformations qui permettent de transformer un flux initial en un nouveau flux selon les critères donnés
+
+	- : interval
+	O : clique
+
+	flux : 	-O----------O--O-------O-----O-O--O------>
+
+	buffer(clickStream.throttle(250ms)) : regrouper les cliques séparés par moins de 250ms en un seul élément :
+
+			            O                O
+	flux : 	-O----------O----------O-----O------------>
+						                 O
+
+	On dispose maintenant un flux de cliques regroupés
+
+	map('get length of list') : va transformer le flux de cliques regroupés en flux d'entier ou chaque élément correspond à la taille du groupe
+
+	flux : 	-1----------2----------1-----3------------>
+
+	filter(x >= 2) : va permettre de filtrer les groupes correspondant à deux cliques ou plus (sont considéré comme double cliques, tous les groupes de plus de 2 cliques)
+
+	flux : 	------------2----------------3------------>
+
+	en 3 opérations on a obtenu le flux souhaité, on peut donc s'y abonner et y réagir comme ou le souhaite
+
+- 5. Traitement des flux :
+
+	On peut faire plus que simplement s'abonner à un flux.
+	Les flux peuvent fournir 3 types de réponses et on peut définir une fonction différente à exécuter pour chacun d'eux.
+
+	premièrement une fonction peut traiter les différentes valeurs de la réponse, un nombre, un tableau, des objets, etc...
+	deuxièmenent une fonction pour traiter le cas d'erreur
+	troisièmement une fonction pour traiter le signal de fin (lorsque le flux est terminé et qu'il n'émettra plus d'évènements)
+
+	Les évènements du flux représentent soit les valeurs de la réponse en cas de succès soit des erreurs soit des terminaisons.
+
+- 6. La librairie RxJs :
+
+	Pour faciliter l'implémentation de la programmation réactive on utilise souvent des librairies spécifiques.
+	La plus populaire est RxJs : https://rxjs.dev/
+
+- 7. Les observables :
+
+	Dans RxJs un flux d'évènements est représenté par un objet appelé un 'Observable'.
+	Ils sont très similaire aux tableaux, comme eux ils contiennent une collection de valeurs.
+	Un Observable ajoute juste la notion de valeur reportée dans le temps.
+	Dans un tableau toutes les valeurs sont disponibles immédiatement, dans un Observable les valeurs viendront au fur et à mesure plus tard dans le temps.
+	On peut traiter un Observable avec des opérateurs similaires à ceux des tableaux.
+
+	exemple :
+
+	- fonction take(n) : récupère les n premiers éléments d'un flux et se débarasse des autres
+
+	- fonction map(x => 10 * x) : applique la fonction passée en paramètre sur chaque élément et retourne le résultat
+
+	- fonction filter(x => x > 10) : permet de filtrer les évènements en ne gardant que ceux répondant positivement au prédiquat passé en paramètre
+
+	- fonction merge() : permet de fusionner deux flux
+
+	- fonction subscribe() : elle applique une fonction passée en paramètre à chaque évènement reçu dans le flux, elle accepte aussi une deuxième fonction pour réaliser la gestion d'erreur et enfin une troisième pour gérer la terminaison du flux.
+
+	Exemple :
+	(on remplace les évènements par des nombres pour la compréhension)
+
+	Observable.fromArray([1, 2, 3, 4, 5])
+		.filter(x => x > 2) // 3, 4, 5
+		.map(x => x * 2) // 6, 8, 10
+		.subscribe(x => console.log(x)); // affiche le résultat
+
+	On crée un observable à partir d'un tableau
+	On y applique un filtre
+	On y applique la méthode map pour appliquer une fonction sur chaque élément
+	On utilise subscribe en lui passant une fonction en cas de succès pour afficher les éléments
+
+	Un Observable est une simple collection asynchrone dans dont les évènements arrivent au cours du temps
+
+- 8. Choisir entre Observable et Promesse :
+
+	Les observables et promesses sont différents même si ils se ressemble car ils gèrent tous deux des valeurs asynchrone.
+	Mais un Observable n'est pas à usage unique et continuera à émettre des évènements jusqu'à émettre un évènement de terminaison ou que l'on s'y désabonne.
+	Globalement les promesses sont plus simples et souvent suffisantes si l'on doit faire peu d'appels.
+	Un Observable peut être transformé en promesse très simplement grâce à la méthode toPromise de RxJs
+
+- 9. Conclusion :
+
+	La programmation réactive permet d'élever le niveau d'abstraction du code et de moins se soucier de certains détails d'implémentation.
+
+
+#### Les requêtes HTTP :
+
+- 1. Introduction :
+
+	Comment communiquer avec un serveur distant afin de récupérer les pokémons, les éditer, les supprimer et sauvegarder ces changements sur le serveur. Ajouter un champ de recherche afin de retrouver plus facilement les pokémons.
+
+	API = Interface de Programmation
+
+	Ce qui permet de communiquer avec un service distant depuis une application. Par exemple pour stocker les données sur un serveur distant de manière durable.
+
+- 2. Mettre en place le client HttpClientModule : 
+
+	6:11:40
