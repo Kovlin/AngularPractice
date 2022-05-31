@@ -1407,10 +1407,147 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 	Comment communiquer avec un serveur distant afin de récupérer les pokémons, les éditer, les supprimer et sauvegarder ces changements sur le serveur. Ajouter un champ de recherche avec auto-complétion afin de retrouver plus facilement les pokémons.
 
-	API = Interface de Programmation
+	API = Interface de Programmation (Application Programming Interface)
 
 	Ce qui permet de communiquer avec un service distant depuis une application. Par exemple pour stocker les données sur un serveur distant de manière durable.
 
 - 2. Mettre en place le client HttpClientModule : 
 
-	6:11:40
+	On va fournir le HttpClientModule au niveau du module racine pour y avoir accès partout, il ne fournit pas d'élément au niveau de la vue. On peut donc l'importer une fois a la racine et il sera disponible et injectable dans tous nos composants. On l'importe avant nos modules persos.
+
+	- import { HttpClientModule } from '@angular/common/http';
+	
+- 3. Simuler une API Web :
+
+	Pour le moment nos données sont stockées et récupérées de manière locale depuis le service pokemon-service dans une constante.
+	On veut pouvoir communiquer avec un serveur distant.
+	On va simuler une API avec Angular et une module npm (l'usage sera le même que si c'était une réelle API REST)
+
+	Installation du package :
+		- npm install angular-in-memory-web-api --save-dev
+
+	On crée un service qui va simuler une base de donnée :
+		- ng generate service in-memory-data
+
+	dans ce service on ajoute l'interface InMemoryDbService qui va demander d'implémenter une méthode pour simuler une base de donnée
+		- import { InMemoryDbService } from 'angular-in-memory-web-api';
+		on rajoute la méthode createDb()
+
+	>	import { Injectable } from '@angular/core';
+		import { InMemoryDbService, RequestInfo } from 'angular-in-memory-web-api';
+		import { POKEMONS } from './pokemon/mock-pokemon-list';
+
+		@Injectable({
+		providedIn: 'root'
+		})
+		export class InMemoryDataService  implements InMemoryDbService {
+
+				createDb() {
+					pokemons = POKEMONS;
+					return { pokemons };
+				}
+		}
+
+	Ce simple service simule une API REST avec des opérations CREATE, UPDATE, DELETE, READ, etc...
+	Pour les données de 12 pokémons.
+
+	On va déclarer cette API simulée au près du reste de l'application. Dans le module racine on importe le module de la librairie servant a simuler notre API Web : 
+
+		- import { HttpClientInMemoryWebApiModule } from 'angular-in-memory-web-api';
+		- import { InMemoryDataService } from './in-memory-data.service';
+		- dans imports : HttpClientInMemoryWebApiModule.forRoot(InMemoryDataService, { dataEncapsulation: false }),
+
+		dataEncapsulation: false permet de ne pas encapsuler la requete dans data et ne pas faire response.data.cequonveut
+
+- 4. Requêter un serveur distant :
+
+	On va maintenant modifié le pokemon-service pour réaliser les requêtes
+	Au lieu de retourner directement une constante (opération synchrone) on aura un délai car on réalise une requête sur un serveur (opération asynchrone)
+
+	- 1. injecter le client HTTP dans le pokemon-service
+		> import { HttpClient } from '@angular/common/http';
+		> constructor(private http: HttpClient) {}
+
+	- 2. pour getPokemonList() : Observable<Pokemon[]> {}
+		> On ne reçoit plus directement une liste de pokemon (pokemon[]) mais une donnée qui va arriver dans le temps qui elle contient un tableau de pokemon, on type donc ça en Observable (Observable<Pokemon[]>) (synchrone/asynchrone)
+		> import { Observable, catchError, of, tap } from 'rxjs';
+		> on ne retourne plus une constante mais un flux contenant les pokémons
+		> le httpClient d'angular renvoit par défaut des flux qu'on peut typer
+		> ensuite on lui passe une URL vers l'API (lien vers l'API du module in-memory)
+
+		> 	getPokemonList(): Observable<Pokemon[]> {
+				return this.http.get<Pokemon[]>('api/pokemons').pipe(
+					tap((response) => console.table(response)),
+					catchError((error) => {
+						console.log(error);
+						return of([]);
+					})
+				)
+			}
+		
+		> On fait une requête http GET avec le client d'Angular, et on va recevoir un Observable, on spécifie que la réponse contient une liste de pokémon (<Pokemon[]>)
+		> En paramètre de la méthode GET on passe une URL ('api/pokemons')
+		> tap est l'équivalent d'un console.log adapté à un Observable
+		> catchError permet d'intercepter une erreur sur un Observable
+
+- 5. Récupérer un pokémon à partir de son identifiant :
+
+	- 1. Pour getPokemonById(pokemonId: number): Observable<Pokemon|undefined> {}
+		> on ne veut plus retourner pokemon ou undefined mais un Observable
+		> on ne cherche plus un pokémon dans une constante mais via une requête http
+		> 	getPokemonById(pokemonId: number): Observable<Pokemon|undefined> {
+				return this.http.get<Pokemon>(`api/pokemons/${pokemonId}`).pipe(
+					tap((response) => console.table(response)),
+					catchError((error) => {
+						console.log(error);
+						return of(undefined);
+					})
+				)
+			}
+
+- 6. Gestion des erreurs : 
+
+	On peut retirer la constante pokemon du service
+
+	On va refactoriser le code
+	On va créer deux méthodes privées pour ce service.
+		- Une méthode de log :
+		> 	private log(response: Pokemon[]|Pokemon|undefined) {
+				console.table(response);
+			}
+		> tap((response) => console.table(response)), devient :
+		> tap((response) => this.log(response)),
+
+		- Une méthode de gestion d'erreur :
+		> 	private handleError(error: Error, errorValue: any) {
+				console.error(error);
+				return of(errorValue);
+			}
+		> le 'of' permet de transformer une donnée simple en un flux de données (un Observable)
+
+		> 	catchError((error) => {
+				console.log(error);
+				return of(undefined);
+			})
+			 devient :
+		> catchError((error) => this.handleError(error, undefined))
+
+	Le code est maintenant plus simple à lire
+
+- 7. Consommer des données asynchrones :
+
+	- On va devoir modifier : detail-pokemon, list-pokemon et edit-pokemon
+
+	- Pour list-pokemon :
+
+		> 	ngOnInit() {
+				this.pokemonService.getPokemonList()
+					.subscribe(pokemonList => this.pokemonList = pokemonList);
+			}
+		- On s'abonne au flux retourner par getPokemonList() et on assigne la pokemonList retournée par le flux à celle du composant
+		- On fait de même pour les 2 autres composants
+
+
+- 8. L'asynchrone et Angular :
+
+	
