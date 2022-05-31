@@ -46,8 +46,8 @@ export class PokemonFormComponent implements OnInit {
 
   onSubmit() {
 		// lorsque l'utilisateur valide le formulaire
-		console.log("Form Submit !");
-		this.router.navigate(['/pokemons', this.pokemon.id]);
+		this.pokemonService.updatePokemon(this.pokemon)
+			.subscribe(() => this.router.navigate(['/pokemons', this.pokemon.id]))
   }
 
 	isTypesValid(type: string) : boolean {

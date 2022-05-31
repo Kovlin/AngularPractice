@@ -1550,4 +1550,33 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 - 8. L'asynchrone et Angular :
 
+	On veut maintenant pouvoir modifier et rendre persistante les modifications d'un pokémon
+
+- 9. Créer une méthode de modification :
+
+	On veut que nos modifications soient persistantes, on va créer une méthode updatePokemon() dans le service
+
+	> updatePokemon(pokemon: Pokemon): Observable<Pokemon> { }
+
+	On prend en paramètre un pokémon et on va sauvegarder ses modifications sur le serveur, idéalement on veut obtenir en retour ce même pokémon.
+	Par rapport aux requêtes GET on ne va pas avoir simplement un paramètre ajouté à l'URL comme ${pokemonId} mais qui va devoir partir dans le corps de la requête HTTP, on va devoir préciser qu'on envoie des données dans la requête.
 	
+	> 	updatePokemon(pokemon: Pokemon): Observable<Pokemon|undefined> {
+			const httpOptions = {
+				headers: new HttpHeaders({ 'Content-Type' : 'application/json' })
+			};
+
+			return this.http.put('api/pokemons', pokemon, httpOptions).pipe(
+				tap((response) => this.log(response)),
+				catchError((error) => this.handleError(error, undefined))
+			)
+		}
+	on envoie le pokemon, ainsi que des options de header dans la requête
+
+- 10. Persister les modifications de l'utilisateur :
+
+	On se rend donc dans le pokemon-form.
+	On va modifier la méthode onSubmit()
+
+
+
