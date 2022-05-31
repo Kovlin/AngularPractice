@@ -1578,5 +1578,32 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 	On se rend donc dans le pokemon-form.
 	On va modifier la méthode onSubmit()
 
+	>	onSubmit() {
+			this.pokemonService.updatePokemon(this.pokemon)
+				.subscribe(() => this.router.navigate(['/pokemons', this.pokemon.id]))
+  		}
 
+- 11. Supprimer un pokémon :
 
+	Ajouter un boutton supprimer depuis la page de détails
+
+	deletePokemonById() dans le pokemon service :
+	> 	deletePokemon(pokemonId: number): Observable<null> {
+			return this.http.delete('/pokemons/${pokemonId}').pipe(
+				.tap((response) => this.log(response)),
+				.catchError((error) => this.handleError(error, null))
+			);
+		}
+
+	dans details-pokemon-componenent :
+	> 	deletePokemon(pokemon: Pokemon) {
+			this.pokemonService.deletePokemon(pokemon.id)
+				.subscribe(() => this.goToPokemonList());
+		}
+
+	dans le detail html :
+	> <a (click)="deletePokemon(pokemon)">Supprimer</a>
+
+- 12. Ajouter un pokémon :
+
+	7:05:25
