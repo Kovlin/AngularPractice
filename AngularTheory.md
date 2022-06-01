@@ -1860,3 +1860,35 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 
 #### Authentification et Sécurité
+
+- 1. Introduction :
+
+	Actuellement chaque utilisateur peut ajouter/modifier/supprimer des pokémons. Il serait plus sûr de ne laisser que les utilisateur authentifié accéder à l'application en les redirigeant après connexion vers la liste des pokémons ou en ne leur laissant que le formulaire de connexion s'il ne sont pas loggé.
+
+- 2. Qu'est-ce qu'un Guards :
+
+	- Mécanisme de protections mis en place par Angular pour entre autre gérer l'authentification
+	- Les guards peuvent être utilisé pour gérer toute sorte de scénario lié à la navigation :
+		> rediriger un utilisateur qui tente d'accèder à une route
+		> obliger un utilisateur à s'authentifier pour accèder à certaines fonctionnalités
+		> etc...
+	- Leur mécanisme est simple, ils retournent un booléen qui permet de contrôler le comportement de la navigation
+	- Un guard peut retourner un booléen de manière synchrone ou asynchrone mais dans la plupart des cas un guard ne peut pas renvoyer un résultat de manière synchrone car il doit attendre une réponse. En effet il peut être nécessaire de poser une question à l'utilisateur, de sauvegarder des changements ou de récupérer des données plus récentes depuis le serveur, toutes ces actions sont asynchrones. 
+	- Dans la plupart des cas le type de retour d'un guard est un Observable qui contient un booléen ou une promesse et le router attendra la réponse pour agir sur la navigation
+	- Même si un guard est conçu pour agir sur la navigation, il en existe des types différents :
+		> CanActivate peut influencer sur la navigation d'une route et par exemple la bloquer (celui qu'on va utiliser)
+		> CanActivateChild peut influencer sur la navigation d'une route fille
+		> CanDeactivate peut empêcher l'utilisateur de naviguer en dehors de la route courante
+		> Resolve peut effectuer une récupération de données avant de naviguer
+		> CanLoad peut gérer la navigation vers un sous-module chargé de manière asynchrone
+
+	- On peut avoir plusieurs guard à différents niveau de navigation mais si l'un deux retourne false, tous les guards seront annulés et la navigation entière sera bloquée
+
+- 3. Mettre en place un Guard :
+
+	Il est très courant pour les applications web de devoir restreindre l'accès à certaines fonctionnalités en fonction de si l'utilisateur est connecté ou non.
+
+	> ng generate guard auth
+	on choisit alors sont type (CanActivate ici)
+
+	8:18:00
