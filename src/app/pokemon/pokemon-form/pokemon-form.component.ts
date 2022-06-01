@@ -12,6 +12,7 @@ export class PokemonFormComponent implements OnInit {
 
 	@Input() pokemon: Pokemon;
 	types: string[];
+	isAddForm: boolean;
 
   constructor(
 		private pokemonService: PokemonService,
@@ -21,6 +22,7 @@ export class PokemonFormComponent implements OnInit {
   ngOnInit(): void {
 		// liste des types de pokémon chargée
 		this.types = this.pokemonService.getPokemonTypeList();
+		this.isAddForm = this.router.url.includes('add');
   }
 
   hasType(type: string): boolean {
@@ -40,15 +42,40 @@ export class PokemonFormComponent implements OnInit {
 			const index = this.pokemon.types.indexOf(type);
 			this.pokemon.types.splice(index, 1);
 		}
-
-
   }
 
   onSubmit() {
 		// lorsque l'utilisateur valide le formulaire
-		this.pokemonService.updatePokemon(this.pokemon)
-			.subscribe(() => this.router.navigate(['/pokemons', this.pokemon.id]))
+		if (this.isAddForm) {
+			this.pokemonService.addPokemon(this.pokemon)
+				.subscribe((pokemon) => this.router.navigate(['/pokemons', pokemon.id]));
+		}
+		else {
+			this.pokemonService.updatePokemon(this.pokemon)
+			.subscribe(() => this.router.navigate(['/pokemons', this.pokemon.id]));
+		}
   }
+
+	// TEST pour que l'image du pokémon corresponde à son ID
+  // onSubmit() {
+	// 	if (this.isAddForm) {
+	// 		this.pokemonService.addPokemon(this.pokemon)
+	// 			.subscribe((pokemon) => {
+	// 				let ide: string;
+	// 				if (pokemon.id < 10)
+	// 					ide = "00" + pokemon.id.toString();
+	// 				else if (pokemon.id < 100)
+	// 					ide = "0" + pokemon.id.toString();
+	// 				else
+	// 					ide = pokemon.id.toString();
+	// 				pokemon.picture =	pokemon.picture.replace("xxx", ide);
+	// 				this.router.navigate(['/pokemons', pokemon.id]);})
+	// 	}
+	// 	else {
+	// 		this.pokemonService.updatePokemon(this.pokemon)
+	// 		.subscribe(() => this.router.navigate(['/pokemons', this.pokemon.id]));
+	// 	}
+  // }
 
 	isTypesValid(type: string) : boolean {
 		if (this.pokemon.types.length == 1  && this.hasType(type))

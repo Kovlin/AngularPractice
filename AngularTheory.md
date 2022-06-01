@@ -1606,4 +1606,257 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 - 12. Ajouter un pokémon :
 
-	7:05:25
+	- Méthode dans le pokémon service pour persister un pokémon dans la base de donnée
+	- Créer un composant addPokemon qui va réutiliser le formulaire d'édition du pokémon mais pour ajouter un nouveau pokémon
+	- Un bouton pour rediriger vers la page d'ajout du pokémon
+
+- 13. Ajouter une méthode POST :
+ 	
+	-	addPokemon(pokemon: Pokemon): Observable<null> {
+			const httpOptions = {
+				headers: new HttpHeaders({ 'Content-Type' : 'application/json' })
+			};
+
+			return this.http.post('api/pokemons', pokemon, httpOptions).pipe(
+				tap((response) => this.log(response)),
+				catchError((error) => this.handleError(error, null))
+			)
+		}
+
+	très similaire à l'update sauf qu'on utilise la méthode POST plutôt que PUT.
+
+- 14. Créer un composant AddPokemon :
+
+	> ng generate component pokemon/add-pokemon
+
+	> On rajoute le formulaire au template de ce composant : 
+
+			<h2 class="center">Ajouter un Pokémon</h2>
+			<app-pokemon-form [pokemon]="pokemon"></app-pokemon-form>
+
+	> On modifie la classe de pokémon pour qu'elle aie une valeur par défaut (car il faut injecter une valeur de départ dans le formulaire)
+	
+					export class Pokemon {
+
+						id: number;
+						hp: number;
+						cp: number;
+						name: string;
+						picture: string;
+						types: string[];
+						created: Date;
+
+						constructor(
+							name: string = 'Entrer un nom...',
+							hp: number = 100,
+							cp: number = 10,
+							picture: string = 'https://assets.pokemon.com/assets/cms2/img/pokedex/detail/xxx.png',
+							types: string[] = ['Normal'],
+							created: Date = new Date()
+						){
+							this.hp = hp;
+							this.cp = cp;
+							this.name = name;
+							this.picture = picture;
+							this.types = types;
+							this.created = created;
+						}		
+					}
+
+	> Pour le moment, sur le formulaire, lors du onSubmit(), on modifie le pokémon, on doit modifier ça pour appeler la bonne fonction lorsqu'on veut ajouter un pokémon et non pas le modifier.
+
+- 15. Adapter notre formulaire d'édition :
+
+	> Comment savoir au niveau de ce composant si on est dans le cas d'un ajout ou d'une édition :
+		récupérer l'url du navigateur lors de l'instanciation du pokémon et si on a edit ou add on peut distinguer les cas.
+
+	> On crée donc la route /pokemon/add
+	> On ajoute la route dans le module de pokémon
+		{ path: 'pokemon/add', component: AddPokemonComponent },
+	
+	> on rajoute a la classe du pokemonForm :
+		isAddForm: boolean;
+
+		dans le init on regarde si la route est add ou edit :
+			this.isAddForm = this.router.url.includes('add'); 
+
+		dans le onSubmit() on fait un if sur ce booléen :
+
+
+			  onSubmit() {
+				// lorsque l'utilisateur valide le formulaire
+				if (this.isAddForm) {
+					this.pokemonService.addPokemon(this.pokemon)
+						.subscribe(() => this.router.navigate(['/pokemons', this.pokemon.id]));
+				}
+				else {
+					this.pokemonService.updatePokemon(this.pokemon)
+					.subscribe(() => this.router.navigate(['/pokemons', this.pokemon.id]));
+				}
+			}
+
+		> Problème : notre pokémon par défaut n'a pas d'identifiant
+		D'où doit venir cet identifiant : il doit venir du serveur (backend) (de l'API pokemon), il attribue un identifiant unique au pokemon lorsqu'il est ajouter, seul le backend peut garantir l'unicité de cet identifiant
+		> on modifie donc le addPokemon pour retourner non plus null mais le Pokemon créé, on cast donc l'Observable<Pokemon> mais aussi le retour de la méthode post, .post<Pokemon>
+		> on utilisera donc plus .subscribe(() => this.router.navigate(['/pokemons', this.pokemon.id]))
+		mais : .subscribe((pokemon) => this.router.navigate(['/pokemons', pokemon.id]))
+
+	> Pour l'édition d'un pokémon, on ne peut pas modifier son image, mais pour l'ajouter on aimerait pouvoir rajouter cette image :
+
+	> Il faut donc dans le template du pokemon-form, on va rajouter un champ Picture, qui servira a l'ajout d'image qu'on veut afficher uniquement dans le cas d'un ajout. (grace a isAddForm)
+
+									<!-- Pokemon Picture -->
+									<div *ngIf="isAddForm" class="form-group">
+										<label for="picture">Image</label>
+										<input type="url" class="form-control" id="picture"
+												required
+											[(ngModel)]="pokemon.picture" name="picture"
+											#picture="ngModel">
+								
+										<div [hidden]="picture.valid || picture.pristine"
+											class="card-panel red accent-1">
+											L'image du pokémon est requise (1-25).
+										</div>
+									</div>
+
+	> Permettre aux utilisateurs à ce formulaire d'ajout
+
+- 16. Ajouter un lien vers le formulaire d'édition :
+
+	- un bouton en bas en droite pour rediriger l'utilisateur vers ce formulaire
+	- dans le template de liste-pokemon on va ajouter le lien vers le formulaire
+
+	> 	<a 	class="btn-floating btn-large waves-effect waves-light red z-depth-3"
+		style="position: fixed; bottom: 25px; right: 25px"
+		routerLink="/pokemon/add"	
+		> + </a>
+
+
+#### RxJs :
+
+- 1. Présentation du champ de recherche :
+
+	- Fonctionnalité permettant de rechercher des pokémons en fonction de leur nom.
+	- Ce champ de rechere implémentera l'autocomplétion
+
+	- Pour le moment, les requêtes HTTP sont assez simples (requêtes One Shot), on éffectue la requête et on récupère le résutltat
+	- Dans certains cas, on peut lancer une requête puis l'annulé, en refaire une nouvelle différente et tout ça avant la réponse du serveur à la première. Cela est plus complexe à implémenter
+
+- 2. Rechercher des pokémons dynamiquement :
+
+	- Trouver des pokémons en fonction d'un terme de recherche entré par l'utilisateur.
+
+	- Dans le pokemonService on met en place une méthode pour chercher une liste de pokémon en fonction d'un terme donné
+		>	searchPokemonList(term: string): Observable<Pokemon[]> {
+				return this.http.get<Pokemon[]>(`api/pokemons/?name=${term}`).pipe(
+					tap((response) => this.log(response)),
+					catchError((error) => this.handleError(error, []))
+					);
+			}
+
+- 3. Construire un composant de recherche :
+
+	- On veut créé un composant qui incorpore ce champ de recherche
+	> ng generate component pokemon/search-pokemon --inline-template=false
+
+	on veut y rajouter les méthodes :
+
+		- search(term: string) : qui remontera la recherche de l'utilisateur
+		- goToDetail(pokemon: Pokemon): qui renverra l'utilisateur vers le pokémon sur lequel il clique dans les suggestions de la barre de recherche
+	
+
+	On veut y rajouter les propriétés :
+		- searchTerms = new Subject<string>();
+		- pokemons$: Observable<Pokemon[]>;
+
+		La classe Subject appartient à la librairie RxJs, c'est une classe permettant de stocké les recherches succéssives de l'utilisateur qu'il réalise dans le champ de recherche dans un tableau de chaînes de caractères (on va obtenir un flux dans le temps des recherches de l'utilisateur)
+		exemple : {...."a"...."ab"...."abz"...."ab"....."abc".....}
+
+		Subject se comporte comme un Observable à la différence près qu'un Observable ne peut que être consommé (on ne peut qu'y subscribe pour reçevoir les données dans le temps). Ici on veut pouvoir piloter un Observable, on va donc utiliser Subject. Cela va nous permettre de construire un flux de données grâce auquels on pourra afficher "en miroir" les pokemonList() correspondant aux recherches en cours
+		exemple : {....pokemonList(a)....pokemonList(ab)....pokemonList(abz)....pokemonList(ab).....pokemonList(abc).....}
+
+		Pour pousser les termes de recherches dans notre flux de données (Subject) on utilisera la méthode next
+		> this.searchTerms.next(term);
+
+		pokemon$ : servira pour construire un flux avec la liste des résultats au fur et à mesure que l'utilisateur tape dans la barre de recherche. le $ à la fin du nom de la variable est là par convention de nommage des Observable (cela indique que c'est un Observale)
+
+	Le champ de recherche en HTML/CSS :
+
+				<div class="row">
+					<div class="col s12 m6 offset-3">
+						<div class="card">
+							<div class="card-content">
+								<div class="input-field">
+									<input 
+										#searchBox 
+										(keyup)="search(searchBox.value)" 
+										placeholder="Rechercher un Pokémon"
+									/>
+									<div class="collection">
+										<a 	*ngFor="let pokemon of pokemons$ | async"
+											(click)="goToDetail(pokemon)"
+											class="collection-item"
+										>
+											{{ pokemon.name }}
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+	> pipe async ( pokemon$ | async ) : ne peut s'appliquer que sur des flux de donnés (Observable) et permet d'éviter de faire subscribe
+		Suffit au lieu d'avoir dans le ngOnInit() : this.pokemon$.subscribe(pokemons => this.pokemons = pokemons);
+		Angular fait donc cet opération mais directement dans le template
+
+	> On veut afficher notre recherche au dessus la liste de pokémon, on l'ajoute donc dans le template juste avant la liste des pokémons
+
+- 4. Construire un Observable personnalisé :
+
+	- On veut brancher la partie visuelle du champ de recherche avec la méthode searchPokemon() pour remonter de vrais résultat à l'utilisateur.
+
+	- Transformer searchTerms (liste de demande de l'utilisateur) en un pokémon$ (un flux de résultat concret de recherche de l'utilisateur).
+
+	- On construit cela dans le ngOnInit()
+		> On veut attendre un certains temps avec de lancer la requête entre les frappes utilisateurs (de manière a rechercher quand l'utilisateur "s'arrête" et attend une réponse)
+
+		- debounceTime() : permet de supprimer tous les termes de recherches trop succins
+		- distinctUntilChange() : attend que le nouvelle élément soit différent du précédent pour continuer, ("permet de supprimer les doublons"), si l'utilisateur revient en arrière par exemple
+		- map() : va transformer chacun des éléments du flux en un observable
+		- switchMap() : va transformer chacun des éléments du flux en un observable mais n'émettre que les data contenues dans ce flux et seulement le dernier flux entré est émis
+
+		>		this.pokemons$ = this.searchTerms.pipe(
+					//{...."a"...."ab"...."abz"...."ab"....."abc".....}
+					debounceTime(300),
+					//{...."ab"...."ab"....."abc".....}
+					distinctUntilChanged(),
+					//{...."ab"........."abc".....}
+					switchMap((term) => this.pokemonService.searchPokemonList(term))
+					//{....pokemonList(ab).........pokemonList(abc).....}
+				);
+
+		
+- 5. Optimiser un flux de requêtes :
+
+	- On veut maintenant que l'utilisateur ne puisse plus rechercher zéro ou une seule lettre, pour afficher des résultats plus pertinent et ne pas trop soliciter le serveur.
+
+	- On va donc modifé searchPokemonList() avec une condition afin de limiter le terme de recherche
+		on rajoute un if sur la longueur du terme et on return un flux vide (if term.length < 2 { return of([]);})
+		
+- 6. Ajouter une icône de chargement :
+
+	- Lorsque l'on navigue dans l'application on affiche pas directement au chargement les data car l'API simulée met systematiquement 500ms avant d'envoyer une réponse car les données sont récupérées depuis un service tiers.
+	- On peut afficher une icône de chargement à l'utilisateur plutôt qu'une page correspondante au cas d'erreur ou les donées n'aurait pas été reçue.
+
+	On va créé un nouveau composant qui ne sera qu'un template et qui sera utilisé pour afficher une icone durant ce temps d'attente
+	
+	> ng generate component pokemon/loader
+
+	> on modifie le template
+
+	> maintenant on aura plus qu'a remplacer nos messages d'erreur par ce template app-loader dans detail et form pokemon
+
+
+#### Authentification et Sécurité
