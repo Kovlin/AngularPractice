@@ -1891,4 +1891,63 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 	> ng generate guard auth
 	on choisit alors sont type (CanActivate ici)
 
-	8:18:00
+	> On implémente le guard sur une route et Angular regarde si canActivate retourne true ou false
+	> { path: 'edit/pokemon/:id', component: EditPokemonComponent, canActivate: [AuthGuard] },
+	Lorsque l'on veut accèder à cette route, on appelle la méthode canActivate du guard AuthGuard et si elle renvoie true on y accède
+
+- 4. Créer un service d'authentification :
+
+	- On va améliorer notre guard pour rediriger les utilisateurs anonymes vers un formulaire d'authentification lorsqu'ils essayent d'accèder à l'application.
+
+	- On va donc d'abord sécuriser toutes les routes du pokémonModule
+	- Une fois les routes dépendantes du guard, il nous faut un nouveau service qui servira à assurer la connextion d'un utilisateur en fonction d'un mot de passe et d'un email car le rôle de guard est de piloté le routing pas de gérer l'authentification
+
+	> ng generate service auth
+
+	 	- on veut une méthode login() et une méthode logout() : 
+
+		 			isLoggedIn: boolean = false;
+					redirectUrl: string;
+
+					login(name:string, password:string): Observable<boolean> {
+						const isLoggedIn = (name == 'pikachu' && password == 'pikachu');
+
+						return of<boolean>(isLoggedIn).pipe(
+							delay(1000),
+							tap((response) => this.isLoggedIn = response)
+							);
+					}
+
+					logout() {
+						this.isLoggedIn = false;
+					}
+
+		- Adapter le guard :
+
+					constructor(
+						private authService: AuthService,
+						private router: Router
+					) {}
+
+					canActivate(): boolean {
+							if (this.authService.isLoggedIn) {
+								return true;
+							}
+							this.router.navigate(['/login']);
+						return false;
+
+- 5. Ajouter une page de connexion sécurisée :
+
+	- sur une page /login on aura un formulaire de connexion
+
+	> ng generate component login --inline-template=false
+	
+	> voir méthode login.components.ts
+	> on déclare ce composant dans les routes
+		{ path: '', redirectTo: 'login', pathMatch: 'full'}, par défaut
+
+
+
+#### Déployer votre application :
+
+	8:47:20
