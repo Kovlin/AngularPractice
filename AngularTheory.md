@@ -1950,4 +1950,120 @@ de style		[Style.color]="isSpecial?'red':'green'">	On peut égalemt définir un 
 
 #### Déployer votre application :
 
-	8:47:20
+- 1. Introduction :
+
+	Déployer l'application en production.
+
+	Les différents environnements :
+		- développement : Lors du du développement
+		- test			: Lors des tests de l'application
+		- production	: Lorsque l'application est prête pour être utilisée par des utilisateurs
+
+	On utilisera Firebase hosting, qui appartient à Google et qui permet d'héberger des sites avec peu de traffic gratuitement.
+
+- 2. Le processus de déployement :
+
+	- Préparer le projet en local avant le déployement
+	- Créer notre projet sur Firebase
+	- Déployer sur Firebase
+
+- 3. Activer le mode production :
+
+	On ne peut pas juste se contenter de copier tous les fichiers locaux sur la plateforme d'hébergement.
+	
+	Il faut d'abord permettre à Angular de supprimer toutes les dépendances inutiles en production, le typescript par exemple car le navigateur ne comprend que le javascript il faut donc que nos fichiers typescript soient transpillé en javascript.
+
+	Il faut aussi compresser les fichiers pour qu'ils ne mettent pas trop de temps à charger dans le navigateur que la navigation soit plus rapide.
+
+	On va demander à Angular de compresser et compiler notre projet pour qu'il soit prêt pour la production.
+
+- 4. Créer un livrable pour la production :
+
+	En développement on utilise ng serve pour l'application et une fois terminé, on utilisera ng build pour construire l'environnement de production.
+
+	> ng build
+
+	Ces fichiers se trouvent dans le dossier dist/ng-pokemon-app
+	C'est uniquement ce dossier qui contient les fichiers optimiser par Angular CLI qu'on va devoir déployer sur notre serveur de production.
+
+- 5. Comment déployer sur Firebase Hosting ?
+
+	- Lors du premier déployement :
+		- Créer un projet
+		- Installer Firebase CLI en local
+		- Configurer le projet sur Firebase
+		- Déployer l'application
+
+- 6. Créer le projet dans Firebase :
+
+	- On clique sur créer/ajouter un projet et on le nomme et on le crée
+	- Une fois sur le projet, dans l'onglet 'Créer' on retrouve une option 'Hosting' qui nous permet d'héberger notre application Angular
+	- On retrouvera sur cette page un historique des déployements
+
+- 7. Installer Firebase CLI :
+
+	CLI : Command Line Interface (Interface en ligne de commande)
+	Cela permet d'executer certaines commandes directement depuis un terminal
+	> npm install -g firebase-tools
+
+	-g pour installer firebase de manière globale
+	on peut réutiliser cette commande plus tard pour mettre à jour Firebase CLI
+
+	> firebase --version
+	pour vérifier l'installation
+	> firebase login
+	Lier le compte google à l'utilitaire Firebase CLI
+
+- 8. Configurer le projet pour le déployement :
+
+	- On veut faire correspondre le projet en local construit grâce à ng build au projet présent sur Firebase hosting
+
+	> firebase init
+
+	- Répondre au questionnaire de firebase en console :
+		touche espace pour préciser le choix et entrer pour valider
+		> On veut utiliser firebase hosting
+			Hosting: Configure files for Firebase Hosting and (optionally) set up GitHub Action deploys
+		> Use an existing project
+		> Quels fichiers veut-on pousser sur le serveur :
+			What do you want to use as your public directory?
+			dist/ng-pokemon-app
+		> Configure as a single-page app (rewrite all urls to /index.html)?
+			Comme on fait une SPA on dit oui
+		> non aux règles automatique de build github
+		> non à la réécriture du fichier index.html
+		> Firebase à créer 2 fichiers dans notre projet : .firebaserc et firebase.json
+
+	Dans firebase.json :
+
+	{
+		"hosting": {
+			"public": "dist/ng-pokemon-app",
+			"ignore": [
+			"firebase.json",
+			"**/.*",
+			"**/node_modules/**"
+			],
+			"rewrites": [
+			{
+				"source": "**",
+				"destination": "/index.html"
+			}
+			]
+		}
+	}
+
+	"public" étant le chemin vers nos fichiers indiqué à firebase
+	"ignore" certains fichiers sont automatiquement ignoré en production
+	"rewrites" les réécritures serveurs, si on déploie notre SPA sur un autre serveur que firebase il faut mettre en place ces règles de redirection. Tout est rediriger vers notre SPA
+
+
+- 9. Déployer votre application sur Firebase :
+
+	> firebase deploy
+
+	firebase nous renvoit l'url de notre projet en ligne après l'avoir déployer
+
+		Project Console: https://console.firebase.google.com/project/ng-pokemon-app-c2e8a/overview
+		Hosting URL: https://ng-pokemon-app-c2e8a.web.app
+
